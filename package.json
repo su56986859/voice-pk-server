@@ -1,0 +1,30 @@
+{
+  "name": "voice-pk-system",
+  "version": "1.0.0",
+  "description": "多人音色分析PK系统（生产环境版）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "backup": "cp voice_system.db voice_system_backup_$(date +%Y%m%d_%H%M%S).db",
+    "generate-secret": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+    "pm2-start": "pm2 start server.js --name voice-pk --env production",
+    "pm2-restart": "pm2 restart voice-pk",
+    "pm2-stop": "pm2 stop voice-pk"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "better-sqlite3": "^9.2.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>AI音色分析·多人PK系统</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 20px;
+      background: #121212;
+      color: #fff;
+      line-height: 1.6;
+    }
+    .panel {
+      background: #1e1e1e;
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    button {
+      padding: 12px 20px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #4338ca;
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .btn-danger {
+      background: #ef4444;
+    }
+    .btn-success {
+      background: #10b981;
+    }
+    .btn-warning {
+      background: #f59e0b;
+    }
+    .login-box {
+      max-width: 400px;
+      margin: 100px auto;
+    }
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      background: #2d2d2d;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 8px 16px;
+      background: #333;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: #4f46e5;
+    }
+    .content {
+      display: none;
+    }
+    .content.active {
+      display: block;
+    }
+    .pitch {
+      font-size: 24px;
+      color: #4ade80;
+      margin: 12px 0;
+      font-weight: 600;
+    }
+    .correct {
+      color: #f87171;
+    }
+    .score {
+      font-size: 32px;
+      color: #38bdf8;
+      font-weight: bold;
+    }
+    .log {
+      background: #000;
+      padding: 16px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      height: 280px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .song {
+      margin: 6px 0;
+      color: #ddd;
+      padding: 4px 0;
+    }
+    .waveform {
+      height: 120px;
+      background: #0f172a;
+      border-radius: 8px;
+      margin: 16px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .wave-bar {
+      position: absolute;
+      bottom: 0;
+      width: 4px;
+      background: #4f46e5;
+      border-radius: 2px;
+      transition: height 0.05s;
+    }
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .pk-room {
+      background: #2d2d2d;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .pk-vs {
+      font-size: 36px;
+      font-weight: bold;
+      color: #f59e0b;
+      margin: 20px 0;
+    }
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #333;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    /* 注销账号弹窗样式 */
+    #deleteAccountModal .modal-content {
+      max-width: 400px;
+    }
+    /* 滑块验证样式 */
+    .verify-container {
+      margin: 20px auto;
+      width: 300px;
+      height: 50px;
+      border: 1px solid #444;
+      border-radius: 25px;
+      position: relative;
+      overflow: hidden;
+    }
+    .verify-bg {
+      width: 100%;
+      height: 100%;
+      background-color: #2d2d2d;
+    }
+    .verify-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50px;
+      height: 100%;
+      background-color: #ef4444;
+      border-radius: 25px;
+      cursor: move;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      user-select: none;
+    }
+    .verify-tip {
+      text-align: center;
+      margin-top: 10px;
+      color: #999;
+      font-size: 12px;
+    }
+    .success-tip {
+      color: #10b981;
+      display: none;
+    }
+    .fail-tip {
+      color: #ef4444;
+      display: none;
+    }
+    /* 备案号样式 */
+    .beian {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #999;
+    }
+    .beian a {
+      color: #999;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 登录/注册面板 -->
+<div id="loginPanel" class="panel login-box">
+  <h2 style="text-align: center;">🎤 音色PK系统</h2>
+  <div class="tabs">
+    <div class="tab active" onclick="switchLoginTab('login')">登录</div>
+    <div class="tab" onclick="switchLoginTab('register')">注册</div>
+  </div>
+  <div id="loginForm" class="content active">
+    <input type="text" id="loginUsername" placeholder="请输入账号">
+    <input type="password" id="loginPassword" placeholder="请输入密码">
+    <button style="width: 100%;" onclick="login()">登录</button>
+  </div>
+  <div id="registerForm" class="content">
+    <input type="text" id="registerUsername" placeholder="请输入账号（至少3位）">
+    <input type="password" id="registerPassword" placeholder="请输入密码（至少6位）">
+    <button style="width: 100%;" onclick="register()">注册</button>
+  </div>
+</div>
+
+<!-- 主功能面板（登录后显示） -->
+<div id="mainPanel" style="display: none;">
+  <div class="panel user-info">
+    <h3>欢迎你，<span id="username">—</span></h3>
+    <div>
+      <button class="btn-warning" onclick="switchTab('pk')">PK对战</button>
+      <button class="btn-danger" onclick="logout()">退出登录</button>
+      <button class="btn-danger" onclick="openDeleteAccountModal()">注销账号</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('analyze')">音色分析</div>
+    <div class="tab" onclick="switchTab('pk')">PK对战</div>
+    <div class="tab" onclick="switchTab('rank')">排行榜</div>
+    <div class="tab" onclick="switchTab('my')">我的记录</div>
+  </div>
+
+  <!-- 音色分析面板 -->
+  <div id="analyze" class="content active panel">
+    <div>
+      <button id="startRecord">开始实时录音+分析</button>
+      <button id="stopRecord" disabled>停止</button>
+    </div>
+    <div class="pitch">当前音高：<span id="pitch">0</span> Hz ( <span id="note">—</span> )</div>
+    <div class="pitch correct">标准音校正：<span id="correct">—</span> Hz ( <span id="correctNote">—</span> )</div>
+    <div class="pitch">音准打分：<span id="currentScore" class="score">0</span> / 100</div>
+    <div class="waveform" id="waveform"></div>
+
+    <div class="tabs" style="margin-top: 20px;">
+      <div class="tab active" onclick="switchResultTab('analysis')">分析结果</div>
+      <div class="tab" onclick="switchResultTab('songs')">推荐歌单</div>
+      <div class="tab" onclick="switchResultTab('advice')">改进建议</div>
+    </div>
+    <div id="analysisResult" class="content active log">
+      🎤 点击「开始实时录音+分析」按钮，清唱10秒即可生成分析报告
+    </div>
+    <div id="songsResult" class="content">
+      <div class="song">请先完成录音分析</div>
+    </div>
+    <div id="adviceResult" class="content log">
+      📈 AI会根据你的音色和音准自动生成专属改进建议
+    </div>
+  </div>
+
+  <!-- PK对战面板 -->
+  <div id="pk" class="content panel">
+    <div id="pkNormal">
+      <h3>🎮 1v1实时PK对战</h3>
+      <p>匹配对手，同时演唱，AI实时打分，分高者胜！</p>
+      <button id="startPk" class="btn-success" style="font-size: 20px; padding: 16px 32px;">开始匹配对手</button>
+      <button id="cancelPk" class="btn-danger" style="display: none;">取消匹配</button>
+    </div>
+    <div id="pkRoom" class="pk-room" style="display: none;">
+      <h3>PK对战中</h3>
+      <div style="display: flex; justify-content: space-around; align-items: center;">
+        <div>
+          <h4 id="myName">我</h4>
+          <div class="score" id="myPkScore">0</div>
+        </div>
+        <div class="pk-vs">VS</div>
+        <div>
+          <h4 id="opponentName">对手</h4>
+          <div class="score" id="opponentPkScore">0</div>
+        </div>
+      </div>
+      <button id="submitPkScore" class="btn-success" disabled>提交我的分数</button>
+    </div>
+  </div>
+
+  <!-- 排行榜面板 -->
+  <div id="rank" class="content panel">
+    <h3>🏆 全服排行榜</h3>
+    <div id="rankList" style="margin-top: 16px;">
+      <div>加载中...</div>
+    </div>
+  </div>
+
+  <!-- 我的记录面板 -->
+  <div id="my" class="content panel">
+    <h3>📊 我的分析记录</h3>
+    <div id="myRecords" style="margin-top: 16px;">
+      <div>加载中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- PK结果弹窗 -->
+<div id="pkResultModal" class="modal">
+  <div class="modal-content">
+    <h2 id="pkResultTitle">PK结束</h2>
+    <div class="pk-vs" id="pkResultScore">0 VS 0</div>
+    <p id="pkResultDesc">你赢了！</p>
+    <button onclick="closePkModal()">返回首页</button>
+  </div>
+</div>
+
+<!-- 注销账号弹窗 -->
+<div id="deleteAccountModal" class="modal">
+  <div class="modal-content">
+    <h3>⚠️ 注销账号</h3>
+    <p style="color: #ef4444; margin: 10px 0;">注销后所有数据将永久删除，且无法恢复！</p>
+    <input type="password" id="deletePwd" placeholder="请输入登录密码确认">
+    <!-- 滑块验证容器 -->
+    <div class="verify-container" id="verifyContainer">
+      <div class="verify-bg"></div>
+      <div class="verify-slider" id="verifySlider" draggable="true">→</div>
+    </div>
+    <div class="verify-tip success-tip" id="successTip">验证成功！正在注销账号...</div>
+    <div class="verify-tip fail-tip" id="failTip">验证失败，请重新滑动！</div>
+    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+      <button onclick="closeDeleteAccountModal()">取消</button>
+      <button class="btn-danger" id="confirmDeleteBtn" disabled onclick="confirmDeleteAccount()">确认注销</button>
+    </div>
+  </div>
+</div>
+
+<!-- 备案号（替换为你的备案号） -->
+<div class="beian">
+  <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备XXXXXXX号</a>
+</div>
+
+<script>
+// 全局变量
+const API_BASE = '';
+let token = localStorage.getItem('token');
+let username = localStorage.getItem('username');
+let userRole = localStorage.getItem('role');
+
+let audioContext, analyser, microphone, scriptProcessor;
+let pitchHistory = [];
+let isRecording = false;
+let waveBars = [];
+let currentPkRoomId = null;
+let ws = null;
+// 验证相关变量
+let verifySuccess = false;
+
+// 页面初始化
+window.onload = () => {
+  if (token && username) {
+    showMainPanel();
+    initWaveform();
+    connectWebSocket();
+    loadRank();
+    loadMyRecords();
+  } else {
+    showLoginPanel();
+  }
+  // 初始化滑块验证
+  initVerifySlider();
+};
+
+// 登录/注册切换
+function switchLoginTab(type) {
+  document.querySelectorAll('#loginPanel .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#loginPanel .content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchLoginTab('${type}')"]`).classList.add('active');
+  document.getElementById(`${type}Form`).classList.add('active');
+}
+
+// 主功能切换
+function switchTab(type) {
+  document.querySelectorAll('#mainPanel .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#mainPanel .content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchTab('${type}')"]`).classList.add('active');
+  document.getElementById(type).classList.add('active');
+  
+  if (type === 'rank') loadRank();
+  if (type === 'my') loadMyRecords();
+}
+
+// 结果标签切换
+function switchResultTab(type) {
+  document.querySelectorAll('#analyze .tabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#analyze .content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchResultTab('${type}')"]`).classList.add('active');
+  document.getElementById(`${type}Result`).classList.add('active');
+}
+
+// 面板切换
+function showLoginPanel() {
+  document.getElementById('loginPanel').style.display = 'block';
+  document.getElementById('mainPanel').style.display = 'none';
+}
+
+function showMainPanel() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('mainPanel').style.display = 'block';
+  document.getElementById('username').textContent = username;
+}
+
+// 登录
+async function login() {
+  const loginUsername = document.getElementById('loginUsername').value;
+  const loginPassword = document.getElementById('loginPassword').value;
+  
+  if (!loginUsername || !loginPassword) {
+    alert('账号和密码不能为空');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: loginUsername, password: loginPassword })
+    });
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.msg);
+    
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('username', data.username);
+    localStorage.setItem('role', data.role);
+    
+    token = data.token;
+    username = data.username;
+    userRole = data.role;
+    
+    alert('登录成功！');
+    showMainPanel();
+    initWaveform();
+    connectWebSocket();
+    loadRank();
+    loadMyRecords();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// 注册
+async function register() {
+  const registerUsername = document.getElementById('registerUsername').value;
+  const registerPassword = document.getElementById('registerPassword').value;
+  
+  if (registerUsername.length < 3) {
+    alert('账号至少3位');
+    return;
+  }
+  if (registerPassword.length < 6) {
+    alert('密码至少6位');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: registerUsername, password: registerPassword })
+    });
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.msg);
+    
+    alert('注册成功！请登录');
+    switchLoginTab('login');
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// 退出登录
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  
+  token = null;
+  username = null;
+  userRole = null;
+  
+  // 关闭websocket
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+  
+  showLoginPanel();
+  alert('已退出登录');
+}
+
+// 初始化波形图
+function initWaveform() {
+  const waveform = document.getElementById('waveform');
+  waveform.innerHTML = '';
+  waveBars = [];
+  
+  for (let i = 0; i < 100; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    bar.style.left = `${i * 1}%`;
+    bar.style.height = '0px';
+    waveform.appendChild(bar);
+    waveBars.push(bar);
+  }
+}
+
+// 连接WebSocket
+function connectWebSocket() {
+  if (ws) return;
+  
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsHost = window.location.host;
+  ws = new WebSocket(`${wsProtocol}//${wsHost}`);
+  
+  ws.onopen = () => {
+    // 发送鉴权信息
+    ws.send(JSON.stringify({
+      type: 'auth',
+      token: token
+    }));
+  };
+  
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    switch (msg.type) {
+      case 'auth_success':
+        console.log('WebSocket连接成功');
+        break;
+      case 'auth_fail':
+        alert('WebSocket鉴权失败，请重新登录');
+        logout();
+        break;
+      case 'pk_waiting':
+        alert('正在匹配对手...');
+        document.getElementById('startPk').style.display = 'none';
+        document.getElementById('cancelPk').style.display = 'block';
+        break;
+      case 'pk_start':
+        currentPkRoomId = msg.payload.roomId;
+        document.getElementById('pkNormal').style.display = 'none';
+        document.getElementById('pkRoom').style.display = 'block';
+        document.getElementById('myName').textContent = username;
+        document.getElementById('opponentName').textContent = msg.payload.opponent;
+        document.getElementById('submitPkScore').disabled = false;
+        break;
+      case 'pk_result':
+        document.getElementById('pkResultScore').textContent = `${msg.payload.myScore} VS ${msg.payload.opponentScore}`;
+        document.getElementById('pkResultTitle').textContent = msg.payload.win ? '你赢了！' : '你输了！';
+        document.getElementById('pkResultDesc').textContent = msg.payload.win ? '恭喜你获得胜利！' : '再接再厉！';
+        openPkModal();
+        // 重置PK状态
+        currentPkRoomId = null;
+        document.getElementById('startPk').style.display = 'block';
+        document.getElementById('cancelPk').style.display = 'none';
+        document.getElementById('pkRoom').style.display = 'none';
+        document.getElementById('myPkScore').textContent = '0';
+        document.getElementById('opponentPkScore').textContent = '0';
+        break;
+      case 'error':
+        alert(msg.msg);
+        // 重置PK状态
+        currentPkRoomId = null;
+        document.getElementById('startPk').style.display = 'block';
+        document.getElementById('cancelPk').style.display = 'none';
+        break;
+    }
+  };
+  
+  ws.onclose = () => {
+    console.log('WebSocket连接关闭');
+    ws = null;
+    // 自动重连
+    if (token) {
+      setTimeout(connectWebSocket, 3000);
+    }
+  };
+  
+  ws.onerror = (error) => {
+    console.error('WebSocket错误:', error);
+    ws = null;
+  };
+}
+
+// 开始PK匹配
+function startPk() {
+  if (!ws) {
+    alert('连接未建立，请稍后再试');
+    return;
+  }
+  
+  ws.send(JSON.stringify({
+    type: 'pk_match'
+  }));
+}
+
+// 取消PK匹配
+function cancelPk() {
+  if (!ws) return;
+  
+  ws.send(JSON.stringify({
+    type: 'pk_cancel'
+  }));
+  
+  currentPkRoomId = null;
+  document.getElementById('startPk').style.display = 'block';
+  document.getElementById('cancelPk').style.display = 'none';
+  alert('已取消匹配');
+}
+
+// 提交PK分数
+function submitPkScore() {
+  const score = parseInt(document.getElementById('currentScore').textContent) || 0;
+  
+  if (score === 0) {
+    alert('请先完成音色分析获得分数');
+    return;
+  }
+  
+  if (!ws || !currentPkRoomId) {
+    alert('PK房间不存在');
+    return;
+  }
+  
+  ws.send(JSON.stringify({
+    type: 'pk_submit_score',
+    payload: {
+      roomId: currentPkRoomId,
+      score: score
+    }
+  }));
+  
+  document.getElementById('myPkScore').textContent = score;
+  document.getElementById('submitPkScore').disabled = true;
+  alert('分数已提交，等待对手...');
+}
+
+// 打开PK结果弹窗
+function openPkModal() {
+  document.getElementById('pkResultModal').classList.add('active');
+}
+
+// 关闭PK结果弹窗
+function closePkModal() {
+  document.getElementById('pkResultModal').classList.remove('active');
+  switchTab('analyze');
+}
+
+// 加载排行榜
+async function loadRank() {
+  try {
+    const res = await fetch(`${API_BASE}/api/rank`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error('加载排行榜失败');
+    
+    let html = '';
+    if (data.length === 0) {
+      html = '<div>暂无数据</div>';
+    } else {
+      data.forEach((item, index) => {
+        html += `
+        <div class="rank-item">
+          <span>${index + 1}. ${item.username}</span>
+          <span>最高得分：${item.max_score} (${item.total_count}次分析)</span>
+        </div>
+        `;
+      });
+    }
+    
+    document.getElementById('rankList').innerHTML = html;
+  } catch (e) {
+    document.getElementById('rankList').innerHTML = `<div style="color: #ef4444;">加载失败：${e.message}</div>`;
+  }
+}
+
+// 加载我的记录
+async function loadMyRecords() {
+  try {
+    const res = await fetch(`${API_BASE}/api/my-records`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error('加载记录失败');
+    
+    let html = '';
+    if (data.length === 0) {
+      html = '<div>暂无分析记录</div>';
+    } else {
+      data.forEach(record => {
+        html += `
+        <div class="rank-item">
+          <span>${new Date(record.create_time).toLocaleString()}</span>
+          <span>得分：${record.score} | 音色：${record.voice_type}</span>
+        </div>
+        `;
+      });
+    }
+    
+    document.getElementById('myRecords').innerHTML = html;
+  } catch (e) {
+    document.getElementById('myRecords').innerHTML = `<div style="color: #ef4444;">加载失败：${e.message}</div>`;
+  }
+}
+
+// ==================== 注销账号相关功能 ====================
+// 打开注销账号弹窗
+function openDeleteAccountModal() {
+  // 重置验证状态
+  resetVerify();
+  verifySuccess = false;
+  document.getElementById('confirmDeleteBtn').disabled = true;
+  document.getElementById('deletePwd').value = '';
+  document.getElementById('deleteAccountModal').classList.add('active');
+}
+
+// 关闭注销账号弹窗
+function closeDeleteAccountModal() {
+  document.getElementById('deleteAccountModal').classList.remove('active');
+}
+
+// 初始化滑块验证
+function initVerifySlider() {
+  const verifySlider = document.getElementById('verifySlider');
+  const verifyContainer = document.getElementById('verifyContainer');
+  const successTip = document.getElementById('successTip');
+  const failTip = document.getElementById('failTip');
+  
+  let startX = 0;
+  let isDragging = false;
+  
+  // 开始拖动
+  verifySlider.addEventListener('dragstart', (e) => {
+    startX = e.clientX;
+    isDragging = true;
+    successTip.style.display = 'none';
+    failTip.style.display = 'none';
+  });
+  
+  // 拖动过程
+  document.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!isDragging) return;
+    
+    const moveX = e.clientX - startX;
+    if (moveX < 0) return;
+    if (moveX > verifyContainer.offsetWidth - verifySlider.offsetWidth) return;
+    
+    verifySlider.style.left = `${moveX}px`;
+  });
+  
+  // 结束拖动
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (!isDragging) return;
+    isDragging = false;
+    
+    // 验证逻辑：拖动距离达到90%以上视为成功
+    const sliderWidth = verifySlider.offsetWidth;
+    const containerWidth = verifyContainer.offsetWidth;
+    const currentLeft = parseInt(verifySlider.style.left || 0);
+    const successRate = currentLeft / (containerWidth - sliderWidth);
+    
+    if (successRate >= 0.9) {
+      // 验证成功
+      successTip.style.display = 'block';
+      failTip.style.display = 'none';
+      verifySlider.style.left = `${containerWidth - sliderWidth}px`;
+      verifySuccess = true;
+      document.getElementById('confirmDeleteBtn').disabled = false;
+    } else {
+      // 验证失败
+      failTip.style.display = 'block';
+      successTip.style.display = 'none';
+      // 重置滑块位置
+      setTimeout(resetVerify, 1000);
+      verifySuccess = false;
+      document.getElementById('confirmDeleteBtn').disabled = true;
+    }
+  });
+}
+
+// 重置验证状态
+function resetVerify() {
+  const verifySlider = document.getElementById('verifySlider');
+  const successTip = document.getElementById('successTip');
+  const failTip = document.getElementById('failTip');
+  
+  verifySlider.style.left = '0px';
+  successTip.style.display = 'none';
+  failTip.style.display = 'none';
+}
+
+// 确认注销账号
+async function confirmDeleteAccount() {
+  if (!verifySuccess) {
+    alert('请先完成人机验证');
+    return;
+  }
+  
+  const deletePwd = document.getElementById('deletePwd').value;
+  if (!deletePwd) {
+    alert('请输入密码确认注销');
+    return;
+  }
+  
+  if (!confirm('确定要注销账号吗？所有数据将永久删除！')) {
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/delete-account`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ password: deletePwd })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.msg);
+    
+    alert('账号注销成功！');
+    // 清除本地存储并跳转到登录页
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+    token = null;
+    username = null;
+    userRole = null;
+    
+    // 关闭websocket
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    
+    closeDeleteAccountModal();
+    showLoginPanel();
+  } catch (e) {
+    alert('注销失败：' + e.message);
+    resetVerify();
+    verifySuccess = false;
+    document.getElementById('confirmDeleteBtn').disabled = true;
+  }
+}
+
+// 录音和音色分析相关（模拟实现）
+document.getElementById('startRecord').addEventListener('click', function() {
+  this.disabled = true;
+  document.getElementById('stopRecord').disabled = false;
+  isRecording = true;
+  alert('录音开始，请清唱10秒');
+  // 模拟音高和分数更新
+  let counter = 0;
+  const interval = setInterval(() => {
+    if (!isRecording) {
+      clearInterval(interval);
+      return;
+    }
+    const pitch = Math.floor(Math.random() * 200) + 100;
+    const score = Math.floor(Math.random() * 100);
+    document.getElementById('pitch').textContent = pitch;
+    document.getElementById('currentScore').textContent = score;
+    // 更新波形图
+    waveBars.forEach(bar => {
+      bar.style.height = `${Math.random() * 100}px`;
+    });
+    counter++;
+    if (counter >= 10) {
+      clearInterval(interval);
+      document.getElementById('stopRecord').click();
+    }
+  }, 1000);
+});
+
+document.getElementById('stopRecord').addEventListener('click', function() {
+  this.disabled = true;
+  document.getElementById('startRecord').disabled = false;
+  isRecording = false;
+  alert('录音结束，正在分析...');
+  // 模拟分析结果
+  setTimeout(() => {
+    document.getElementById('analysisResult').textContent = `
+🎤 音色分析报告
+- 平均音高：${Math.floor(Math.random() * 100) + 150} Hz
+- 音高范围：${Math.floor(Math.random() * 50) + 100} - ${Math.floor(Math.random() * 100) + 200} Hz
+- 音准稳定性：${Math.floor(Math.random() * 100)}%
+- 音色类型：${['低音炮', '中音稳', '高音亮', '全能型'][Math.floor(Math.random() * 4)]}
+- 综合得分：${document.getElementById('currentScore').textContent}
+
+分析结论：你的音准${Math.random() > 0.5 ? '较好' : '一般'}，建议多练习${Math.random() > 0.5 ? '低音区' : '高音区'}的稳定度。
+    `;
+    document.getElementById('songsResult').innerHTML = `
+      <div class="song">🎵 推荐歌曲1：《海阔天空》- 适合你的音域</div>
+      <div class="song">🎵 推荐歌曲2：《成都》- 匹配你的音色特点</div>
+      <div class="song">🎵 推荐歌曲3：《七里香》- 提升音准稳定性</div>
+    `;
+    document.getElementById('adviceResult').textContent = `
+📈 改进建议
+1. 每日练习10分钟音阶，提升音准稳定性
+2. 尝试用腹式呼吸法唱歌，增强气息支撑
+3. 录制自己的演唱，对比原唱找音准差距
+4. 避免长时间飙高音，保护声带
+    `;
+    // 保存记录
+    saveRecord();
+  }, 1500);
+});
+
+// 保存分析记录
+async function saveRecord() {
+  if (!token) return;
+  
+  const score = parseInt(document.getElementById('currentScore').textContent) || 0;
+  const pitch = parseInt(document.getElementById('pitch').textContent) || 0;
+  
+  try {
+    await fetch(`${API_BASE}/api/save-record`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        avg_pitch: pitch,
+        min_pitch: pitch - 50,
+        max_pitch: pitch + 50,
+        stability: Math.floor(Math.random() * 100),
+        voice_type: ['低音炮', '中音稳', '高音亮', '全能型'][Math.floor(Math.random() * 4)],
+        score: score
+      })
+    });
+  } catch (e) {
+    console.error('保存记录失败:', e);
+  }
+}
+</script>
+</body>
+</html>
